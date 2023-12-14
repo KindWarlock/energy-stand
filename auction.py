@@ -57,7 +57,7 @@ def count_stonks(energy_sold, last_acc):
             everything.append(count_income(type))
     losses = np.sum(everything[:2])
     # print(energy_sold)
-    income = np.sum(everything[2:]) + 2 * np.sum(energy_sold) + last_acc
+    income = np.sum(everything[2:]) + 2 * (np.sum(energy_sold) + last_acc)
     return income - losses
 
 
@@ -80,20 +80,11 @@ def plot_energy():
     plt.draw()
 
 
-# def smooth_find_peaks():
-# # TODO: учет размера накопителя и сколько он может отдавать за такт
-
-#     peaks, _ = find_peaks(arr, distance=10)
-#     plt.subplot(1, 2, 2)
-#     plt.plot(peaks, arr[peaks], 'x')
-#     plt.draw()
-
 def get_accumulated_energy():
-    wasters = get_energy_wasters()
-    gens = get_energy_generators()
+    wasters = get_energy_wasters() * 1.25
+    gens = get_energy_generators() * 0.83
     diff = pd.Series.to_numpy(gens - wasters)
     cumsum = np.cumsum(diff)
-
     diffs = cumsum - np.insert(cumsum, 0, 0)[:-1]
     while np.max(diffs) > ACCUMULATOR_S:
         first_big_diff = np.where(diffs > ACCUMULATOR_S)[0][0]
@@ -110,7 +101,6 @@ def get_accumulated_energy():
         cumsum[first_max_idx:] = cumsum[first_max_idx:] - \
             (cumsum[first_max_idx] - ACCUMULATOR_C)
     discarded = np.array(discarded)
-    # TODO: restrictions on getting
     return cumsum, discarded, discarded_turn
 
 
@@ -128,6 +118,8 @@ data = pd.read_csv("forecast.csv", sep="\t")
 data = data.drop(data.columns[[0]], axis=1)
 data = data.rename(columns={'Солнце': 'sun', 'Ветер': 'wind', 'Больницы': 'hospital',
                             'Заводы': 'factory', 'Дома': 'living'})
+data['sun'] = data['sun'] * 2
+data['wind'] = data['wind'] * 1.5
 
 new_data = data.copy()
 new_data = new_data * 0
@@ -170,4 +162,3 @@ while True:
 
     plot_energy()
     plot_energy_income()
-    # TODO: табличка с вариками покупки и влиянием на энергетику
